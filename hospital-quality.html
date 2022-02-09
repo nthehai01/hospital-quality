@@ -227,9 +227,40 @@ dim(outcome)</code></pre>
 <p><em>Output</em></p>
 <p>Return a hospital name in that sate with the lowest 30-day death rate</p>
 </div>
-<div id="function-definition" class="section level4">
-<h4>Function definition</h4>
-<p><em>Main function</em></p>
+<div id="function-definitions" class="section level4">
+<h4>Function definitions</h4>
+<ul>
+<li><em>Util functions</em></li>
+</ul>
+<p><code>check.validity(state, outcome)</code>: Check the validity of <code>state</code> and <code>outcome</code> with the following conditions: <code>state</code> must be a 2-character abbreviated name of a state, <code>outcome</code> must be one of “heart attack”, “heart failure” or “pneumonia”</p>
+<pre class="r"><code>check.validity &lt;- function(state, outcome) {
+    stopifnot(nchar(state) == 2)
+    stopifnot(outcome %in% c(&quot;heart attack&quot;, &quot;heart failure&quot;, &quot;pneumonia&quot;))
+}</code></pre>
+<p><code>get.hospital(df, state, outcome)</code>: filter the hospital in that state then sort them by 30-day death rate and name</p>
+<pre class="r"><code>get.hospital &lt;- function(df, state, outcome) {
+    ## uppercase the first letter of every word in &#39;outcome&#39;, 
+    ## remove spaces between words and make the column name
+    outcome %&lt;&gt;% str_to_title() %&gt;%
+        make.names() %&gt;%
+        paste(&quot;Hospital.30.Day.Death..Mortality..Rates.from.&quot;, ., sep = &quot;&quot;)
+    
+    ## find the hospital names and their outcome in &#39;state&#39;
+    hospital.outcome &lt;- df[df$State == state, c(&quot;Hospital.Name&quot;, outcome)]
+    hospital.outcome[, outcome] &lt;- as.numeric(hospital.outcome[, outcome])
+    
+    ## remove rows containing NA values
+    hospital.outcome &lt;- na.omit(hospital.outcome)
+    
+    ## sort &#39;hospital.outcome&#39;
+    hospital.outcome &lt;- hospital.outcome[order(hospital.outcome[, outcome],
+                                               hospital.outcome$Hospital.Name), ]
+    
+    return(hospital.outcome)
+}</code></pre>
+<ul>
+<li><em>Main function</em></li>
+</ul>
 <pre class="r"><code>library(stringr)
 library(dplyr)</code></pre>
 <pre><code>## 
@@ -244,46 +275,81 @@ library(dplyr)</code></pre>
     ## read the outcome data
     df &lt;- read.csv(&quot;./data/outcome-of-care-measures.csv&quot;, colClasses = &quot;character&quot;)
     
-    # check that the state and outcome are valid
-    stopifnot(nchar(state) == 2)
-    stopifnot(outcome %in% c(&quot;heart attack&quot;, &quot;heart failure&quot;, &quot;pneumonia&quot;))
+    check.validity(state, outcome)
     
-    ## uppercase the first letter of every word in &#39;outcome&#39;, 
-    ## remove spaces between words and make the column name
-    outcome %&lt;&gt;% str_to_title() %&gt;%
-        make.names() %&gt;%
-        paste(&quot;Hospital.30.Day.Death..Mortality..Rates.from.&quot;, ., sep = &quot;&quot;)
-    
-    ## find the hospital names and their outcome in &#39;state&#39;
-    hospital.outcome &lt;- df[df$State == state, c(&quot;Hospital.Name&quot;, outcome)]
-    hospital.outcome[, outcome] &lt;- as.numeric(hospital.outcome[, outcome])
-    
-    ## sort &#39;hospital.outcome&#39;
-    hospital.outcome &lt;- hospital.outcome[order(hospital.outcome[, outcome], 
-                                               hospital.outcome$Hospital.Name), ]
+    hospital.outcome &lt;- get.hospital(df, state, outcome)
     
     return(hospital.outcome[1, 1])
 }</code></pre>
-<p><em>Some illustrations</em></p>
+<ul>
+<li><em>Some illustrations</em></li>
+</ul>
 <pre class="r"><code>best(&quot;TX&quot;, &quot;heart attack&quot;)</code></pre>
-<pre><code>## Warning in best(&quot;TX&quot;, &quot;heart attack&quot;): NAs introduced by coercion</code></pre>
+<pre><code>## Warning in get.hospital(df, state, outcome): NAs introduced by coercion</code></pre>
 <pre><code>## [1] &quot;CYPRESS FAIRBANKS MEDICAL CENTER&quot;</code></pre>
-<pre class="r"><code> best(&quot;TX&quot;, &quot;heart failure&quot;)</code></pre>
-<pre><code>## Warning in best(&quot;TX&quot;, &quot;heart failure&quot;): NAs introduced by coercion</code></pre>
+<pre class="r"><code>best(&quot;TX&quot;, &quot;heart failure&quot;)</code></pre>
+<pre><code>## Warning in get.hospital(df, state, outcome): NAs introduced by coercion</code></pre>
 <pre><code>## [1] &quot;FORT DUNCAN MEDICAL CENTER&quot;</code></pre>
 <pre class="r"><code>best(&quot;MD&quot;, &quot;heart attack&quot;)</code></pre>
-<pre><code>## Warning in best(&quot;MD&quot;, &quot;heart attack&quot;): NAs introduced by coercion</code></pre>
+<pre><code>## Warning in get.hospital(df, state, outcome): NAs introduced by coercion</code></pre>
 <pre><code>## [1] &quot;JOHNS HOPKINS HOSPITAL, THE&quot;</code></pre>
-<pre class="r"><code> best(&quot;MD&quot;, &quot;pneumonia&quot;)</code></pre>
+<pre class="r"><code>best(&quot;MD&quot;, &quot;pneumonia&quot;)</code></pre>
 <pre><code>## [1] &quot;GREATER BALTIMORE MEDICAL CENTER&quot;</code></pre>
 <pre class="r"><code>best(&quot;BB&quot;, &quot;heart attack&quot;)</code></pre>
 <pre><code>## [1] NA</code></pre>
 <pre class="r"><code>best(&quot;NY&quot;, &quot;hert attack&quot;)</code></pre>
-<pre><code>## Error in best(&quot;NY&quot;, &quot;hert attack&quot;): outcome %in% c(&quot;heart attack&quot;, &quot;heart failure&quot;, &quot;pneumonia&quot;) is not TRUE</code></pre>
+<pre><code>## Error in check.validity(state, outcome): outcome %in% c(&quot;heart attack&quot;, &quot;heart failure&quot;, &quot;pneumonia&quot;) is not TRUE</code></pre>
 </div>
 </div>
 <div id="ranking-hospitals-by-outcome-in-a-state" class="section level2">
 <h2>3. Ranking hospitals by outcome in a state</h2>
+<p>In this part, we will write a function called <code>rankhospital</code>, the function reads the <code>outcome-of-care-measures.csv</code> file and returns a character vector with the name of the hospital that has the specified ranking. Hospitals that do not have data on a particular outcome should be excluded from the set of hospitals when deciding the rankings.</p>
+<div id="handling-ties-1" class="section level4">
+<h4>Handling ties</h4>
+<p>It may occur multiple hospitals have the same 30-day mortality rate for a given cause of death. In those cases ties should be broken by using the hospital name.</p>
+</div>
+<div id="function-summary-1" class="section level4">
+<h4>Function summary</h4>
+<p><code>rankhospital(state, outcome, name)</code></p>
+<p><em>Input</em></p>
+<ul>
+<li><code>state</code>: The 2-character abbreviated name of a state</li>
+<li><code>outcome</code>: An outcome name</li>
+<li><code>num</code>: The ranking of a hospital in that state for that outcome. This argument can take values “best”, “worst”, or an integer indicating the ranking (smaller numbers are better). If the given number is larger than the number of hospitals in that state, then the function should return NA.</li>
+</ul>
+<p><em>Output</em></p>
+<p>Return hospital names in that state with the given rank 30-day death rate. For example, the call <code>rankhospital(&quot;MD&quot;, &quot;heart failure&quot;, 5)</code> would return a character vector containing the name of the hospital with 5th lowest 30-day death rate for heart value.</p>
+</div>
+<div id="function-definition" class="section level4">
+<h4>Function definition</h4>
+<ul>
+<li><em>Main function</em></li>
+</ul>
+<pre class="r"><code>rankhospital &lt;- function(state, outcome, num = &quot;best&quot;) {
+    ## read the outcome data
+    df &lt;- read.csv(&quot;./data/outcome-of-care-measures.csv&quot;, colClasses = &quot;character&quot;)
+    
+    check.validity(state, outcome)
+    
+    hospital.outcome &lt;- get.hospital(df, state, outcome)
+    
+    if(num == &quot;best&quot;) return(hospital.outcome[1, 1])
+    if(num == &quot;worst&quot;) return(tail(hospital.outcome[, 1], 1))
+    return(hospital.outcome[num, 1])
+}</code></pre>
+<ul>
+<li><em>Some illustrations</em></li>
+</ul>
+<pre class="r"><code>rankhospital(&quot;TX&quot;, &quot;heart failure&quot;, 4)</code></pre>
+<pre><code>## Warning in get.hospital(df, state, outcome): NAs introduced by coercion</code></pre>
+<pre><code>## [1] &quot;DETAR HOSPITAL NAVARRO&quot;</code></pre>
+<pre class="r"><code>rankhospital(&quot;MD&quot;, &quot;heart attack&quot;, &quot;worst&quot;)</code></pre>
+<pre><code>## Warning in get.hospital(df, state, outcome): NAs introduced by coercion</code></pre>
+<pre><code>## [1] &quot;HARFORD MEMORIAL HOSPITAL&quot;</code></pre>
+<pre class="r"><code> rankhospital(&quot;MN&quot;, &quot;heart attack&quot;, 5000)</code></pre>
+<pre><code>## Warning in get.hospital(df, state, outcome): NAs introduced by coercion</code></pre>
+<pre><code>## [1] NA</code></pre>
+</div>
 </div>
 
 
