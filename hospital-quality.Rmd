@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 
@@ -213,5 +213,71 @@ rankhospital("MD", "heart attack", "worst")
 
 ```{r}
  rankhospital("MN", "heart attack", 5000)
+```
+
+
+## 4.  Ranking hospitals in all states
+
+In this part, we will write a function called ```rankdall```, the function reads the ```outcome-of-care-measures.csv``` file and returns a 2-column data frame containing the hospital in each state that has the given ranking.
+
+#### Handling ties
+
+The ```rankall``` function should handle ties in the 30-day mortality rates in the same way that the ```rankhospital``` function handles ties. The function should return a value for every state (some may be NA). The first column in the data frame is named ```hospital```, which contains the hospital name, and the second column is named ```state```, which contains the 2-character abbreviation for the state name. Hospitals that do not have data on a particular outcome should be excluded from the set of hospitals when deciding the rankings.
+
+#### Function summary
+
+```rankall(outcome, num = "best")```
+
+*Input*
+
+- ```outcome```: An outcome name
+- ```num```: The ranking of a hospital in that state for that outcome. This argument can take values “best”, “worst”, or an integer indicating the ranking (smaller numbers are better). If the given number is larger than the number of hospitals in that state, then the function should return NA.
+
+*Output*
+
+Return a data frame with the hospital names and the abbreviated state name. For example the function call ```rankall("heart attack", "best")``` would return a data frame containing the names of the hospitals that are the best in their respective states for 30-day heart attack death rates. 
+
+#### Function definition
+
+- *Main function*
+```{r}
+rankall <- function(outcome, num = "best") {
+    ## read the 'State' column in the outcome data
+    state.df <- read.csv("./data/outcome-of-care-measures.csv", colClasses = c(rep("NULL", 6), "character", rep("NULL", 39)))[, 1]
+    
+    states<- unique(sort(state.df))
+    
+    hospitals <- c()
+    for (state in states) {
+        hospital <- rankhospital(state, outcome, num)
+        hospitals <- append(hospitals, hospital)
+    }
+    
+    data.frame(state = states, hospital = hospitals)
+}
+```
+
+- *Some illustrations*
+
+```{r}
+head(rankall("heart attack", 20), 10)
+```
+
+```{r}
+tail(rankall("pneumonia", "worst"), 3)
+```
+
+```{r}
+tail(rankall("heart failure"), 10)
+```
+
+
+## Libraries
+
+Here are the libraries and their versions that I am using in this project:
+```{r, echo=FALSE}
+x<-c(packageVersion("stringr"), packageVersion("dplyr"))
+data.frame(Library = c("stringr", "dplyr"), 
+           Version = c(packageVersion("stringr"), packageVersion("dplyr")))
 ```
 
