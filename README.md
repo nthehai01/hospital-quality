@@ -2,7 +2,7 @@
 This is the Programming assignment 3 of [R Programming](https://www.coursera.org/learn/r-programming) on Coursera.
 
 ## Introduction
-For this first programming assignment you will be given a chance to discover what are the best hospital in each state in the USA with the data set [here](https://d396qusza40orc.cloudfront.net/rprog%2Fdata%2FProgAssignment3-data.zip`).
+For this first programming assignment you will be given a chance to discover what are the best hospital in each state in the USA with the data set [here](https://d396qusza40orc.cloudfront.net/rprog%2Fdata%2FProgAssignment3-data.zip).
 
 Project Summary
 This project is falling into 4 parts:
